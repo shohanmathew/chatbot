@@ -9,7 +9,7 @@ class chatbot extends StatelessWidget {
     Future.delayed(Duration(seconds: 1), () {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => Screens()),
+        MaterialPageRoute(builder: (context) => Chatbot()),
       );
     });
     return Scaffold(

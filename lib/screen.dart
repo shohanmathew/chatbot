@@ -1,52 +1,141 @@
-import 'dart:ffi';
-
+import 'package:chatbot/services.dart';
 import 'package:flutter/material.dart';
 
-class Screens extends StatefulWidget {
-  Screens({super.key});
+class Chatbot extends StatefulWidget {
+  const Chatbot({super.key});
 
   @override
-  State<Screens> createState() => _ScreensState();
+  State<Chatbot> createState() => _ChatbotState();
 }
 
-class _ScreensState extends State<Screens> {TextEditingController sendcont=TextEditingController();
-  bool loading= false;
-String Response="";
-void sendmessage()async{if(sendcont.text.trim().isEmpty){return null;}}
+class _ChatbotState extends State<Chatbot> {
+  TextEditingController send = TextEditingController();
+  bool Loading = false;
+  String response = '';
+
+  // Maintain chat history
+  List<Map<String, String>> messages = [];
+
+  void sendMessage() async {
+    if (send.text.trim().isEmpty) return;
+
+    String userInput = send.text.trim();
+
+    setState(() {
+      messages.add({'sender': 'user', 'text': userInput});
+      Loading = true;
+      response = ''; // clear old response
+    });
+
+    final reply = await chatbot(userInput);
+
+    setState(() {
+      response = reply;
+      messages.add({'sender': 'bot', 'text': response});
+      Loading = false;
+    });
+
+    send.clear();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 13, 23, 29),
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.grey[850],
         leading: Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.all(12.0),
           child: CircleAvatar(
-            backgroundImage: NetworkImage(
-              "https://upload.wikimedia.org/wikipedia/commons/f/f9/Wikimedia_Brand_Guidelines_Update_2022_Wikimedia_Logo_Brandmark.png",
-            ),
+            backgroundImage: AssetImage('assets/avatar.png'),
           ),
         ),
         actions: [
-          Padding(padding: const EdgeInsets.all(8.0)),
-          Icon(Icons.settings, color: const Color.fromARGB(255, 246, 245, 245)),
+          Icon(Icons.settings, color: Colors.white, size: 30),
+          SizedBox(width: 20),
+          Icon(Icons.more_vert, color: Colors.white, size: 30),
+          SizedBox(width: 20),
+        ],
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: messages.isEmpty
+                ? Center(
+                    child: Text(
+                      "Ask something...",
+                      style: TextStyle(color: Colors.white54),
+                    ),
+                  )
+                : ListView.builder(
+                    padding: EdgeInsets.all(20.0),
+                    itemCount: messages.length,
+                    itemBuilder: (context, index) {
+                      final msg = messages[index];
+                      final isUser = msg['sender'] == 'user';
 
-          SizedBox(width: 10),
-          Icon(
-            Icons.more_vert,
-            color: const Color.fromARGB(255, 244, 240, 240),
+                      return Container(
+                        margin: EdgeInsets.symmetric(vertical: 6),
+                        alignment: isUser
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
+                        child: Container(
+                          padding: EdgeInsets.all(12),
+                          constraints: BoxConstraints(
+                            maxWidth: MediaQuery.of(context).size.width * 0.7,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isUser
+                                ? Colors.blue[700]
+                                : Colors.grey[800],
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Text(
+                            msg['text']!,
+                            style: TextStyle(color: Colors.white, fontSize: 16),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          if (Loading)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12.0),
+              child: CircularProgressIndicator(color: Colors.white),
+            ),
+          Container(
+            padding: EdgeInsets.all(10.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: send,
+                    style: TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hint: Text(
+                        '  Type a message...',
+                        style: TextStyle(color: Colors.white60, fontSize: 18),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[850],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(50),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 8),
+                IconButton(
+                  onPressed: sendMessage,
+                  icon: Icon(Icons.send, color: Colors.white),
+                ),
+              ],
+            ),
           ),
         ],
       ),
-      bottomNavigationBar: TextField(
-        decoration: InputDecoration(
-          label: Text("search"),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          prefixIcon: Icon(Icons.search),
-          suffixIcon: GestureDetector(onTap: () {Navigator.push(context, MaterialPageRoute(builder: (context) =>Screens(),));},
-       child: Icon(Icons.send, color: Colors.white))),
-        ),
-      );
-    
+    );
   }
 }
